@@ -3,6 +3,9 @@
  * Displays a single content fragment selected via Universal Editor picker
  */
 
+// eslint-disable-next-line import/no-unresolved
+import { getAdventureByPath } from '../../scripts/aem-gql-connection.js';
+
 /**
  * Show error state
  */
@@ -16,6 +19,13 @@ function showError(block, message) {
 function showEmpty(block) {
   const emptyMessage = 'No content fragment selected. Use the Universal Editor to select a content fragment.';
   block.innerHTML = `<div class="content-fragment-empty">${emptyMessage}</div>`;
+}
+
+// Format label for display
+// Converts camelCase to spaced words with first letter capitalized
+// e.g., "tripLength" becomes "Trip Length"
+function formatLabel(key) {
+  return key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
 }
 
 /**
@@ -32,7 +42,6 @@ export default async function decorate(block) {
   try {
     // Fetch the content fragment via persisted query
     // from aem-gql-connection.js (contains author/publish endpoints)
-    // eslint-disable-next-line no-undef
     const contentFragment = await getAdventureByPath(cfPath);
 
     if (!contentFragment) {
@@ -40,7 +49,19 @@ export default async function decorate(block) {
       return;
     }
 
-    block.innerHTML = `<div class="content-fragment" style="text-align:center;font-style:italic;">Content Fragment Selected: ${cfPath}</div>`;
+    // eslint-disable-next-line no-console
+    console.log('Content Fragment:', contentFragment.data); // Retrieves data from the content fragment based on the adventure-by-path query
+    // eslint-disable-next-line no-console
+    console.log('Content Fragment:', contentFragment.keys); // Retrieves keys defined in the adventure-by-path query
+
+    let display = '';
+    Object.keys(contentFragment.data).forEach((key) => {
+      const label = formatLabel(key);
+      const value = contentFragment.data[key];
+      display += `<div> ${label}: ${value} </div>`;
+    });
+
+    block.innerHTML = display;
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('Content Fragment block error:', error);
